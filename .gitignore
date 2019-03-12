@@ -24,4 +24,4 @@ venv/
 [._]tmp/
 *.log
 *.sqlite
-
+pip-wheel-metadata/
