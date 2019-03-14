@@ -5,7 +5,7 @@ prepare:
 	pre-commit install
 
 test:
-	pytest
+	tox .
 
 serve:
 	waitress-serve --port=5000  --call 'fluid_contacts:create_app'
