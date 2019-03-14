@@ -1,14 +1,29 @@
+import os
 from flask import Flask
+from .models import db
 
-app = Flask(__name__)
+
+config = {
+    "development": "config.DevelopmentConfig",
+    "testing": "config.TestingConfig",
+    "default": "config.DevelopmentConfig",
+}
 
 
-@app.route("/")
-def hello():
-    return "<h1>Hello world</h1>"
+def configure_app(app):
+    config_name = os.getenv("FLASK_CONFIGURATION", "default")
+    app.config.from_object(
+        config[config_name]
+    )  # object-based default configuration
+    app.config.from_pyfile(
+        "config.cfg", silent=True
+    )  # instance-folders configuration
 
 
 def create_app():
+    app = Flask(__name__)
+    configure_app(app)
+    db.init_app(app)
     return app
 
 
