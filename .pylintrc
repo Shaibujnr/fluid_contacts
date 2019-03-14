@@ -4,4 +4,5 @@ disable=
     too-few-public-methods,
     invalid-name,
     no-member,
-    redefined-outer-name
+    redefined-outer-name,
+    cyclic-import
