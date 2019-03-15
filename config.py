@@ -3,6 +3,7 @@ class BaseConfig:
     TESTING = False
     SQLALCHEMY_ECHO = False
     JWT_HEADER_TYPE = "JWT"
+    JWT_ACCESS_TOKEN_EXPIRES = False
 
 
 class DevelopmentConfig(BaseConfig):
@@ -16,7 +17,9 @@ class DevelopmentConfig(BaseConfig):
 
 
 class TestingConfig(BaseConfig):
-    SQLALCHEMY_DATABASE_URI = "sqlite:////tmp/test.db"
+    SQLALCHEMY_DATABASE_URI = (
+        "postgresql://zed:#1234@localhost/fluid_contacts_test"
+    )
     SECRET_KEY = (
         "_\xa0$ \x85\xec\xe4\xa4\xc9\x97\xe6\xb0Y\xd6,`\xb6sBs\xcey\xfd\xd9"
     )

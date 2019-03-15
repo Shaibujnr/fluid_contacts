@@ -1,4 +1,5 @@
 import os
+import json
 import pytest
 
 
@@ -15,10 +16,26 @@ def app():
 
 @pytest.fixture
 def db(app):
-    from flask_sqlalchemy import SQLAlchemy
-    from fluid_contacts.models import metadata
+    from fluid_contacts import db
 
-    db = SQLAlchemy(app, metadata=metadata)
-    db.drop_all()
-    db.create_all()
-    return db
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+
+
+@pytest.fixture
+def token(app, db):
+    client = app.test_client()
+    result = client.post(
+        '/api/user/signup',
+        data=dict(
+            username="randomusername",
+            password="randompassword",
+            email="randomemail@gmail.com",
+        ),
+    )
+    assert result.status_code == 200
+    data = json.loads(result.data.decode())
+    token = data.get('token', None)
+    assert token is not None
+    return token

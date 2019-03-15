@@ -13,5 +13,6 @@ def test_app_config():
     app = create_app()
     assert app.config.get("TESTING")
     assert (
-        app.config.get("SQLALCHEMY_DATABASE_URI") == "sqlite:////tmp/test.db"
+        app.config.get("SQLALCHEMY_DATABASE_URI")
+        == "postgresql://zed:#1234@localhost/fluid_contacts_test"
     )

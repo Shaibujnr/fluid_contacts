@@ -1,5 +1,5 @@
 import datetime
-from . import db
+from fluid_contacts import db
 
 
 class Contact(db.Model):
