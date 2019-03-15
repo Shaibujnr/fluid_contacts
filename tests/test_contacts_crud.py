@@ -75,3 +75,30 @@ def test_read_single_contact(app, token):
     assert result.status_code == 200
     ndata = json.loads(result.data.decode())
     assert ndata.get('id') == contact_id
+
+
+def test_edit_contact(app, token):
+    client = app.test_client()
+    result_add_contact = client.post(
+        "/api/contact",
+        data=dict(
+            name="Random Name",
+            phonenumber="08000000000",
+            email="remail@yahoo.com",
+            address="#3 home",
+        ),
+        headers={"Authorization": "JWT %s" % token},
+    )
+    assert result_add_contact.status_code == 200
+    data = json.loads(result_add_contact.data.decode())
+    contact_id = data.get('id')
+    assert contact_id is not None
+    result = client.patch(
+        '/api/contact/%d' % contact_id,
+        data={"name": "Janet Doe"},
+        headers={"Authorization": "JWT %s" % token},
+    )
+    assert result.status_code == 200
+    ndata = json.loads(result.data.decode())
+    assert ndata.get('id') == contact_id
+    assert ndata.get('name') == "Janet Doe"

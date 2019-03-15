@@ -18,11 +18,11 @@ signin_parser.add_argument('username', type=str, help="enter username")
 signin_parser.add_argument('password', type=str, help="user password")
 
 
-new_contact_parser = reqparse.RequestParser()
-new_contact_parser.add_argument("phonenumber")
-new_contact_parser.add_argument("email")
-new_contact_parser.add_argument("address")
-new_contact_parser.add_argument("name")
+contact_parser = reqparse.RequestParser()
+contact_parser.add_argument("phonenumber")
+contact_parser.add_argument("email")
+contact_parser.add_argument("address")
+contact_parser.add_argument("name")
 
 
 contact_fields = {
@@ -31,6 +31,7 @@ contact_fields = {
     'phonenumber': fields.String,
     'email': fields.String,
     'address': fields.String,
+    'starred': fields.Boolean,
 }
 
 
@@ -93,7 +94,7 @@ class ContactCollectionResource(Resource):
     def post(self):
         # add new contact for the authenticated user
         username = get_jwt_identity()
-        args = new_contact_parser.parse_args(strict=True)
+        args = contact_parser.parse_args(strict=True)
         name = args['name']
         email = args['email']
         phonenumber = args['phonenumber']
@@ -146,9 +147,30 @@ class ContactResource(Resource):
     @jwt_required
     def patch(self, contact_id):
         username = get_jwt_identity()
-        return dict(
-            message="update contact with id %d for %s" % (contact_id, username)
-        )
+        args = contact_parser.parse_args(strict=True)
+        name = args['name']
+        email = args['email']
+        phonenumber = args['phonenumber']
+        address = args['address']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                if name:
+                    contact.name = name
+                if email:
+                    contact.email = email
+                if phonenumber:
+                    contact.phonenumber = phonenumber
+                if address:
+                    contact.address = address
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
 
     @jwt_required
     def delete(self, contact_id):
