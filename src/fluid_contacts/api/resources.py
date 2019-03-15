@@ -1,5 +1,9 @@
 from flask_restful import Resource, reqparse
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import (
+    create_access_token,
+    jwt_required,
+    get_jwt_identity,
+)
 from ..models import db, User
 
 signup_parser = reqparse.RequestParser()
@@ -65,3 +69,36 @@ class SigninResource(Resource):
                 200,
             )
         return {"message": "authentication failed"}, 400
+
+
+class ContactCollectionResource(Resource):
+    @jwt_required
+    def post(self):
+        username = get_jwt_identity()
+        return dict(message="Add a new contact for %s" % username)
+
+    @jwt_required
+    def get(self):
+        username = get_jwt_identity()
+        return dict(message="Read all contacts for %s" % username)
+
+
+class ContactResource(Resource):
+    @jwt_required
+    def get(self, id):
+        username = get_jwt_identity()
+        return dict(message="get contact with id %d for %s" % (id, username))
+
+    @jwt_required
+    def patch(self, id):
+        username = get_jwt_identity()
+        return dict(
+            message="update contact with id %d for %s" % (id, username)
+        )
+
+    @jwt_required
+    def delete(self, id):
+        username = get_jwt_identity()
+        return dict(
+            message="Delete contact with id %d for %s" % (id, username)
+        )
