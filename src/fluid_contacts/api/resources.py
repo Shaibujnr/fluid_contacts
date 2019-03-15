@@ -1,4 +1,4 @@
-from flask_restful import Resource, reqparse, fields, marshal_with
+from flask_restful import Resource, reqparse, fields, marshal
 from flask_jwt_extended import (
     create_access_token,
     jwt_required,
@@ -116,23 +116,15 @@ class ContactCollectionResource(Resource):
             )
             db.session.add(contact)
             db.session.commit()
-            result = dict(
-                name=contact.name,
-                email=contact.email,
-                address=contact.address,
-                phone_number=contact.phonenumber,
-            )
-            result["id"] = contact.id
-            return result
+            return marshal(contact, contact_fields), 200
         return dict(message="user does not exist"), 400
 
     @jwt_required
-    @marshal_with(contact_fields)
     def get(self):
         username = get_jwt_identity()
         user = User.query.filter_by(username=username).first()
         if user is not None:
-            return user.contacts
+            return marshal(user.contacts, contact_fields), 200
         return dict(message="User does not exist"), 400
 
 
@@ -140,9 +132,16 @@ class ContactResource(Resource):
     @jwt_required
     def get(self, contact_id):
         username = get_jwt_identity()
-        return dict(
-            message="get contact with id %d for %s" % (contact_id, username)
-        )
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
 
     @jwt_required
     def patch(self, contact_id):
