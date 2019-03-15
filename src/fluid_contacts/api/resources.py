@@ -1,4 +1,4 @@
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, fields, marshal_with
 from flask_jwt_extended import (
     create_access_token,
     jwt_required,
@@ -17,11 +17,21 @@ signin_parser = reqparse.RequestParser()
 signin_parser.add_argument('username', type=str, help="enter username")
 signin_parser.add_argument('password', type=str, help="user password")
 
+
 new_contact_parser = reqparse.RequestParser()
 new_contact_parser.add_argument("phonenumber")
 new_contact_parser.add_argument("email")
 new_contact_parser.add_argument("address")
 new_contact_parser.add_argument("name")
+
+
+contact_fields = {
+    'id': fields.Integer,
+    'name': fields.String,
+    'phonenumber': fields.String,
+    'email': fields.String,
+    'address': fields.String,
+}
 
 
 class SignupResource(Resource):
@@ -88,19 +98,13 @@ class ContactCollectionResource(Resource):
         email = args['email']
         phonenumber = args['phonenumber']
         address = args['address']
-        if (
-            name is None
-            or email is None
-            or phonenumber is None
-            or address is None
-        ):
+        if not name or not email or not phonenumber or not address:
             return (
                 dict(
                     message="name, phonenumber, email and address must be provided"
                 ),
                 400,
             )
-
         user = User.query.filter_by(username=username).first()
         if user is not None:
             contact = Contact(
@@ -123,27 +127,33 @@ class ContactCollectionResource(Resource):
         return dict(message="user does not exist"), 400
 
     @jwt_required
+    @marshal_with(contact_fields)
     def get(self):
         username = get_jwt_identity()
-        return dict(message="Read all contacts for %s" % username)
+        user = User.query.filter_by(username=username).first()
+        if user is not None:
+            return user.contacts
+        return dict(message="User does not exist"), 400
 
 
 class ContactResource(Resource):
     @jwt_required
     def get(self, contact_id):
         username = get_jwt_identity()
-        return dict(message="get contact with id %d for %s" % (id, username))
+        return dict(
+            message="get contact with id %d for %s" % (contact_id, username)
+        )
 
     @jwt_required
     def patch(self, contact_id):
         username = get_jwt_identity()
         return dict(
-            message="update contact with id %d for %s" % (id, username)
+            message="update contact with id %d for %s" % (contact_id, username)
         )
 
     @jwt_required
     def delete(self, contact_id):
         username = get_jwt_identity()
         return dict(
-            message="Delete contact with id %d for %s" % (id, username)
+            message="Delete contact with id %d for %s" % (contact_id, username)
         )

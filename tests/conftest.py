@@ -23,6 +23,7 @@ def db(app):
         db.create_all()
 
 
+# pylint:disable=unused-argument
 @pytest.fixture
 def token(app, db):
     client = app.test_client()

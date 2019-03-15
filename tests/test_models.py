@@ -1,4 +1,4 @@
-from fluid_contacts.models import User, Contact
+from fluid_contacts.models import User
 
 
 def test_new_user():
