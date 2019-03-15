@@ -187,3 +187,50 @@ class ContactResource(Resource):
                 400,
             )
         return dict(message="User does not exist"), 400
+
+
+class StarredContactCollectionResource(Resource):
+    @jwt_required
+    def get(self):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user is not None:
+            result = [contact for contact in user.contacts if contact.starred]
+            return marshal(result, contact_fields), 200
+        return dict(message="User does not exist"), 400
+
+
+class StarredContactResource(Resource):
+    @jwt_required
+    def patch(self, contact_id):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                contact.starred = True
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
+
+
+class UnstarredContactResource(Resource):
+    @jwt_required
+    def patch(self, contact_id):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                contact.starred = False
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
