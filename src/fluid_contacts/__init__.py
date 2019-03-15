@@ -1,6 +1,8 @@
 import os
 from flask import Flask
-from .models import db
+from flask_jwt_extended import JWTManager
+from .models import db, User
+from .api import blueprint
 
 
 config = {
@@ -8,6 +10,8 @@ config = {
     "testing": "config.TestingConfig",
     "default": "config.DevelopmentConfig",
 }
+
+jwt = JWTManager()
 
 
 def configure_app(app):
@@ -24,6 +28,8 @@ def create_app():
     app = Flask(__name__)
     configure_app(app)
     db.init_app(app)
+    jwt.init_app(app)
+    app.register_blueprint(blueprint, url_prefix="/api")
     return app
 
 

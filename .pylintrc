@@ -5,4 +5,5 @@ disable=
     invalid-name,
     no-member,
     redefined-outer-name,
-    cyclic-import
+    cyclic-import,
+    no-self-use
