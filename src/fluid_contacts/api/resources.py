@@ -1,6 +1,11 @@
-from flask_restful import Resource, reqparse
-from flask_jwt_extended import create_access_token
-from ..models import db, User
+from flask_restful import Resource, reqparse, fields, marshal
+from flask_jwt_extended import (
+    create_access_token,
+    jwt_required,
+    get_jwt_identity,
+)
+from fluid_contacts import db
+from ..models import User, Contact
 
 signup_parser = reqparse.RequestParser()
 signup_parser.add_argument('username', type=str, help="user name")
@@ -11,6 +16,23 @@ signup_parser.add_argument('password', type=str, help='user password')
 signin_parser = reqparse.RequestParser()
 signin_parser.add_argument('username', type=str, help="enter username")
 signin_parser.add_argument('password', type=str, help="user password")
+
+
+contact_parser = reqparse.RequestParser()
+contact_parser.add_argument("phonenumber")
+contact_parser.add_argument("email")
+contact_parser.add_argument("address")
+contact_parser.add_argument("name")
+
+
+contact_fields = {
+    'id': fields.Integer,
+    'name': fields.String,
+    'phonenumber': fields.String,
+    'email': fields.String,
+    'address': fields.String,
+    'starred': fields.Boolean,
+}
 
 
 class SignupResource(Resource):
@@ -65,3 +87,150 @@ class SigninResource(Resource):
                 200,
             )
         return {"message": "authentication failed"}, 400
+
+
+class ContactCollectionResource(Resource):
+    @jwt_required
+    def post(self):
+        # add new contact for the authenticated user
+        username = get_jwt_identity()
+        args = contact_parser.parse_args(strict=True)
+        name = args['name']
+        email = args['email']
+        phonenumber = args['phonenumber']
+        address = args['address']
+        if not name or not email or not phonenumber or not address:
+            return (
+                dict(
+                    message="name, phonenumber, email and address must be provided"
+                ),
+                400,
+            )
+        user = User.query.filter_by(username=username).first()
+        if user is not None:
+            contact = Contact(
+                name=name,
+                email=email,
+                address=address,
+                phonenumber=phonenumber,
+                user_id=user.id,
+            )
+            db.session.add(contact)
+            db.session.commit()
+            return marshal(contact, contact_fields), 200
+        return dict(message="user does not exist"), 400
+
+    @jwt_required
+    def get(self):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user is not None:
+            return marshal(user.contacts, contact_fields), 200
+        return dict(message="User does not exist"), 400
+
+
+class ContactResource(Resource):
+    @jwt_required
+    def get(self, contact_id):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
+
+    @jwt_required
+    def patch(self, contact_id):
+        username = get_jwt_identity()
+        args = contact_parser.parse_args(strict=True)
+        name = args['name']
+        email = args['email']
+        phonenumber = args['phonenumber']
+        address = args['address']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                if name:
+                    contact.name = name
+                if email:
+                    contact.email = email
+                if phonenumber:
+                    contact.phonenumber = phonenumber
+                if address:
+                    contact.address = address
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
+
+    @jwt_required
+    def delete(self, contact_id):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                db.session.delete(contact)
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
+
+
+class StarredContactCollectionResource(Resource):
+    @jwt_required
+    def get(self):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user is not None:
+            result = [contact for contact in user.contacts if contact.starred]
+            return marshal(result, contact_fields), 200
+        return dict(message="User does not exist"), 400
+
+
+class StarredContactResource(Resource):
+    @jwt_required
+    def patch(self, contact_id):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                contact.starred = True
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
+
+
+class UnstarredContactResource(Resource):
+    @jwt_required
+    def patch(self, contact_id):
+        username = get_jwt_identity()
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                contact.starred = False
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400

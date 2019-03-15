@@ -1,6 +1,6 @@
 import datetime
 from passlib.hash import pbkdf2_sha256
-from . import db
+from fluid_contacts import db
 
 
 class User(db.Model):
