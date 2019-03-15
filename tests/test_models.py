@@ -28,9 +28,20 @@ def test_user_hash_password():
     assert not user.verify_password("wrong")
 
 
-def test_contact():
+def test_contact(db):
     user = User(username="shaibu", email="shaibu@gmail.com", password="test")
-    contact = Contact(phonenumber="080", email="c@gmail.com", address="home")
-    assert user is not None
-    assert contact is not None
-    # user.contacts.append(contact)
+    db.session.add(user)
+    db.session.commit()
+    contact = Contact(
+        phonenumber="080", email="c@gmail.com", address="home", user_id=user.id
+    )
+    contact2 = Contact(
+        phonenumber="090",
+        email="c1@gmail.cmo",
+        address="house",
+        user_id=user.id,
+    )
+    db.session.add(contact)
+    db.session.add(contact2)
+    assert user.id is not None
+    assert len(user.contacts) == 2

@@ -19,5 +19,6 @@ def db(app):
     from fluid_contacts.models import metadata
 
     db = SQLAlchemy(app, metadata=metadata)
+    db.drop_all()
     db.create_all()
     return db

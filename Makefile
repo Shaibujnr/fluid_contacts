@@ -3,6 +3,7 @@ prepare:
 	poetry install -v
 	poetry develop
 	pre-commit install
+	python manage.py db upgrade
 
 test:
 	tox .
