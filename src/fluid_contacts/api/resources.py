@@ -175,6 +175,15 @@ class ContactResource(Resource):
     @jwt_required
     def delete(self, contact_id):
         username = get_jwt_identity()
-        return dict(
-            message="Delete contact with id %d for %s" % (contact_id, username)
-        )
+        user = User.query.filter_by(username=username).first()
+        if user:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                db.session.delete(contact)
+                db.session.commit()
+                return marshal(contact, contact_fields), 200
+            return (
+                {"message": "contact with id %d does not exist" % contact_id},
+                400,
+            )
+        return dict(message="User does not exist"), 400
